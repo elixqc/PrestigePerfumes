@@ -15,7 +15,7 @@ if (!isset($conn)) {
         <div class="hero-content">
             <h1>Discover Elegance</h1>
             <p>Premium fragrances curated for the discerning nose.</p>
-            <a href="shop.php" class="btn btn-primary">Shop Now</a>
+            <a href="items/index.php" class="btn btn-primary">Shop Now</a>
         </div>
     </div>
 </section>
