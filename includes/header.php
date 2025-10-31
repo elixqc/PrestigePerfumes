@@ -29,7 +29,7 @@ session_start(); // Make sure session is started
             <ul class="nav-links">
                 <li><a href="/prestigeperfumes/items/index.php">Collections</a></li>
                 <li><a href="/prestigeperfumes/about.php">Maison</a></li>
-                <li><a href="/prestigeperfumes/cart.php">Cart</a></li>
+                <li><a href="/prestigeperfumes/items/cart.php">Cart</a></li>
             </ul>
 
             <div class="nav-icons">

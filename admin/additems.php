@@ -26,87 +26,82 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Start transaction
     $conn->begin_transaction();
     
-    // Validate inputs
+    // Validate numeric inputs
     if (!is_numeric($price) || $price < 0) {
-        throw new Exception("Invalid price amount");
-    }
-    if (!is_numeric($stock_quantity) || $stock_quantity < 0) {
-        throw new Exception("Invalid stock quantity");
-    }
-    if (!is_numeric($supplier_price) || $supplier_price < 0) {
-        throw new Exception("Invalid supplier price");
-    }
+        $error_message = "Invalid price amount";
+    } elseif (!is_numeric($stock_quantity) || $stock_quantity < 0) {
+        $error_message = "Invalid stock quantity";
+    } elseif (!is_numeric($supplier_price) || $supplier_price < 0) {
+        $error_message = "Invalid supplier price";
+    } else {
+        try {
+            // Handle file upload
+            $target_dir = "../assets/images/perfumes/";
+            if (!file_exists($target_dir)) {
+                mkdir($target_dir, 0777, true);
+            }
 
-    try {
-        // Handle file upload
-        $target_dir = "../assets/images/perfumes/";
-        if (!file_exists($target_dir)) {
-            mkdir($target_dir, 0777, true);
-        }
-        
-        // Generate a unique filename to prevent overwriting
-        $file_extension = strtolower(pathinfo($_FILES["image_path"]["name"], PATHINFO_EXTENSION));
-        $unique_filename = uniqid('perfume_', true) . '.' . $file_extension;
-        
-        // Check if image file is actual image
-        if(isset($_POST["submit"])) {
+            $file_extension = strtolower(pathinfo($_FILES["image_path"]["name"], PATHINFO_EXTENSION));
+            $unique_filename = uniqid('perfume_', true) . '.' . $file_extension;
+            $target_file = $target_dir . $unique_filename;
+
+            // Check if file is an image
             $check = getimagesize($_FILES["image_path"]["tmp_name"]);
-            if($check !== false) {
-                // Verify file type
-                if(!in_array($file_extension, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    throw new Exception("Only JPG, JPEG, PNG & GIF files are allowed.");
-                }
-                
-                // Upload file
-                if (move_uploaded_file($_FILES["image_path"]["tmp_name"], $target_file)) {
-                    $image_path = "assets/images/perfumes/" . $unique_filename;
-                    
-                    // Get the variant from POST or set default
-                    $variant = isset($_POST['variant']) ? $_POST['variant'] : null;
-                    $is_active = 1; // New products are active by default
-
-                    // Insert into products table
-                    $sql = "INSERT INTO products (product_name, description, category_id, supplier_id, price, 
-                            stock_quantity, image_path, variant, is_active) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("ssiiidssi", $product_name, $description, $category_id, $supplier_id, 
-                                    $price, $stock_quantity, $image_path, $variant, $is_active);
-                    
-                    if ($stmt->execute()) {
-                        $product_id = $conn->insert_id;
-                        
-                        // Insert into supply_logs table with all required fields
-                        $supply_sql = "INSERT INTO supply_logs (product_id, supplier_id, quantity_added, 
-                                     quantity_remaining, supplier_price, supply_date, remarks) 
-                                     VALUES (?, ?, ?, ?, ?, ?, ?)";
-                        $supply_stmt = $conn->prepare($supply_sql);
-                        $supply_stmt->bind_param("iiiddss", $product_id, $supplier_id, $stock_quantity, 
-                                               $stock_quantity, $supplier_price, $supply_date, $remarks);
-                        
-                        if ($supply_stmt->execute()) {
-                            $conn->commit();
-                            $success_message = "Product added successfully and supply log recorded!";
-                        } else {
-                            throw new Exception("Error recording supply log");
-                        }
-                    } else {
-                        throw new Exception("Error adding product");
-                    }
-                } else {
-                    throw new Exception("Error uploading image");
-                }
-            } else {
+            if ($check === false) {
                 throw new Exception("File is not an image");
             }
+
+            // Allow only specific file types
+            if(!in_array($file_extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                throw new Exception("Only JPG, JPEG, PNG & GIF files are allowed.");
+            }
+
+            // Upload the file
+            if (!move_uploaded_file($_FILES["image_path"]["tmp_name"], $target_file)) {
+                throw new Exception("Error uploading image");
+            }
+
+            $image_path = "assets/images/perfumes/" . $unique_filename;
+            $variant = $_POST['variant'] ?? null;
+            $is_active = 1; // New products are active by default
+
+            // Insert into products table
+            $sql = "INSERT INTO products (product_name, description, category_id, supplier_id, price, 
+                    stock_quantity, image_path, variant, is_active) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssiiidssi", $product_name, $description, $category_id, $supplier_id, 
+                              $price, $stock_quantity, $image_path, $variant, $is_active);
+
+            if ($stmt->execute()) {
+                $product_id = $conn->insert_id;
+
+                // Insert into supply_logs table
+                $supply_sql = "INSERT INTO supply_logs (product_id, supplier_id, quantity_added, 
+                             quantity_remaining, supplier_price, supply_date, remarks) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $supply_stmt = $conn->prepare($supply_sql);
+                $supply_stmt->bind_param("iiiddss", $product_id, $supplier_id, $stock_quantity, 
+                                         $stock_quantity, $supplier_price, $supply_date, $remarks);
+
+                if ($supply_stmt->execute()) {
+                    $conn->commit();
+                    $success_message = "Product added successfully and supply log recorded!";
+                } else {
+                    throw new Exception("Error recording supply log");
+                }
+            } else { 
+                throw new Exception("Error adding product");
+            }
+
+        } catch (Exception $e) {
+            $conn->rollback();
+            $error_message = $e->getMessage();
         }
-    } catch (Exception $e) {
-        $conn->rollback();
-        $error_message = $e->getMessage();
     }
 }
 
-// Fetch categories for the dropdown
+// Fetch categories for dropdown
 $categories = [];
 $category_query = "SELECT category_id, category_name FROM categories";
 $result = $conn->query($category_query);
@@ -116,7 +111,7 @@ if ($result) {
     }
 }
 
-// Fetch suppliers for the dropdown
+// Fetch active suppliers for dropdown
 $suppliers = [];
 $supplier_query = "SELECT supplier_id, supplier_name FROM suppliers WHERE is_active = 1";
 $result = $conn->query($supplier_query);
@@ -126,6 +121,7 @@ if ($result) {
     }
 }
 ?>
+
 
 <style>
 .product-form-container {
