@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 31, 2025 at 06:14 AM
+-- Generation Time: Oct 31, 2025 at 01:01 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -33,6 +33,13 @@ CREATE TABLE `cart` (
   `quantity` int(11) NOT NULL,
   `date_added` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `cart`
+--
+
+INSERT INTO `cart` (`customer_id`, `product_id`, `quantity`, `date_added`) VALUES
+(1, 15, 1, '2025-10-31 19:33:57');
 
 -- --------------------------------------------------------
 
@@ -68,6 +75,13 @@ CREATE TABLE `customers` (
   `email` varchar(100) DEFAULT NULL,
   `password` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `customers`
+--
+
+INSERT INTO `customers` (`customer_id`, `full_name`, `contact_number`, `address`, `email`, `password`) VALUES
+(1, 'nico barredo', '09930536452', 'taguig city', 'nicobarredo87@gmail.com', '$2y$10$sdOo4FqFO2YX3a3DSZKRD.TUFnvuZLVRxNx3So2IpyXMTv.4N2R/a');
 
 -- --------------------------------------------------------
 
@@ -134,6 +148,20 @@ CREATE TABLE `products` (
   `is_active` tinyint(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `products`
+--
+
+INSERT INTO `products` (`product_id`, `product_name`, `description`, `category_id`, `supplier_id`, `price`, `stock_quantity`, `image_path`, `variant`, `is_active`) VALUES
+(8, 'Eclat', 'Fresh and elegant scent with citrus and floral notes.', 1, 1, 2500.00, 50, 'assets/images/perfumes/Eclat.png', 'EDP', 1),
+(9, 'Elixir', 'A luxurious fragrance with woody and oriental notes.', 1, 2, 3200.00, 40, 'assets/images/perfumes/Elixir.png', 'EDP', 1),
+(10, 'Noir', 'Intense and mysterious fragrance with dark accords.', 2, 3, 2800.00, 30, 'assets/images/perfumes/Noir.png', 'EDT', 1),
+(11, 'Primus', 'Light and refreshing fragrance perfect for daily wear.', 2, 4, 2000.00, 60, 'assets/images/perfumes/Primus.png', 'EDT', 1),
+(12, 'Quartus', 'Bold and modern scent with spicy undertones.', 1, 5, 3500.00, 20, 'assets/images/perfumes/Quartus.png', 'EDP', 1),
+(13, 'Quintus', 'Soft and romantic fragrance with floral notes.', 3, 6, 2900.00, 35, 'assets/images/perfumes/Quintus.png', 'Perfume Oil', 1),
+(14, 'Sucundus', 'Classic fragrance with woody and citrus blend.', 3, 7, 3000.00, 25, 'assets/images/perfumes/Sucundus.png', 'Perfume Oil', 1),
+(15, 'Zenith', 'sample description', 1, 1, 9500.00, 10, 'assets/images/perfumes/perfume_69048ff8b306a4.05205285.png', '50ml', 1);
+
 -- --------------------------------------------------------
 
 --
@@ -148,6 +176,22 @@ CREATE TABLE `suppliers` (
   `address` varchar(255) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `suppliers`
+--
+
+INSERT INTO `suppliers` (`supplier_id`, `supplier_name`, `contact_person`, `contact_number`, `address`, `is_active`) VALUES
+(1, 'AromaLux Co.', 'Maria Santos', '09171234567', '123 Market Street, Manila', 1),
+(2, 'Essence World', 'Juan Dela Cruz', '09281234567', '45 Aromatic Ave, Quezon City', 1),
+(3, 'Perfume Masters', 'Ana Lopez', '09391234567', '78 Fragrance Blvd, Makati', 1),
+(4, 'Scentopia', 'Carlos Reyes', '09451234567', '90 Perfume Rd, Taguig', 1),
+(5, 'Luxury Scents Inc.', 'Isabel Gomez', '09561234567', '12 Elite St, Pasig', 1),
+(6, 'Fragrance Hub', 'Ricardo Tan', '09671234567', '34 Aroma Lane, Mandaluyong', 1),
+(7, 'Elite Perfumeries', 'Luz Villanueva', '09781234567', '56 Scent Plaza, Manila', 1),
+(8, 'Divine Essence', 'Roberto Cruz', '09891234567', '67 Perfume Street, Quezon City', 1),
+(9, 'Aromatic Touch', 'Sofia Ramos', '09901234567', '89 Fragrance Blvd, Makati', 1),
+(10, 'Noble Scents', 'Miguel Fernandez', '09181234567', '101 Aroma Avenue, Taguig', 1);
 
 -- --------------------------------------------------------
 
@@ -165,6 +209,13 @@ CREATE TABLE `supply_logs` (
   `supply_date` datetime DEFAULT current_timestamp(),
   `remarks` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `supply_logs`
+--
+
+INSERT INTO `supply_logs` (`supply_id`, `product_id`, `supplier_id`, `quantity_added`, `quantity_remaining`, `supplier_price`, `supply_date`, `remarks`) VALUES
+(1, 15, 1, 10, 10, 7500.00, '2025-10-31 00:00:00', 'First Supplies');
 
 -- --------------------------------------------------------
 
@@ -326,7 +377,7 @@ ALTER TABLE `categories`
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -350,19 +401,19 @@ ALTER TABLE `order_details`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
 --
 ALTER TABLE `suppliers`
-  MODIFY `supplier_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `supplier_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `supply_logs`
 --
 ALTER TABLE `supply_logs`
-  MODIFY `supply_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `supply_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `users`
