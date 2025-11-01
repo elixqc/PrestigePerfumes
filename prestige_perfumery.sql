@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 31, 2025 at 01:01 PM
+-- Generation Time: Nov 01, 2025 at 12:57 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -33,13 +33,6 @@ CREATE TABLE `cart` (
   `quantity` int(11) NOT NULL,
   `date_added` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `cart`
---
-
-INSERT INTO `cart` (`customer_id`, `product_id`, `quantity`, `date_added`) VALUES
-(1, 15, 1, '2025-10-31 19:33:57');
 
 -- --------------------------------------------------------
 
@@ -98,6 +91,30 @@ CREATE TABLE `notifications` (
   `date_created` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `notifications`
+--
+
+INSERT INTO `notifications` (`notification_id`, `order_id`, `customer_id`, `message`, `is_read`, `date_created`) VALUES
+(1, 1, 1, 'Order #1 has been placed successfully!', 1, '2025-11-01 13:51:15'),
+(2, 2, 1, 'Order #2 has been placed successfully!', 1, '2025-11-01 13:53:26'),
+(3, 2, 1, 'Order #2 status updated to \'On the Way\'.', 1, '2025-11-01 14:42:30'),
+(4, 1, 1, 'Order #1 status updated to \'On the Way\'.', 1, '2025-11-01 14:42:35'),
+(5, 3, 1, 'Order #3 has been placed successfully!', 1, '2025-11-01 14:43:18'),
+(6, 2, 1, 'Order #2 status updated to \'Received\'.', 1, '2025-11-01 14:43:47'),
+(7, 1, 1, 'Order #1 status updated to \'Received\'.', 1, '2025-11-01 14:54:22'),
+(8, 4, 1, 'Order #4 has been placed successfully!', 1, '2025-11-01 17:25:06'),
+(9, 5, 1, 'Order #5 has been placed successfully!', 1, '2025-11-01 17:39:17'),
+(10, 5, 1, 'Order #5 status updated to \'On the Way\'.', 1, '2025-11-01 17:40:08'),
+(11, 5, 1, 'Order #5 status updated to \'Received\'.', 1, '2025-11-01 18:15:21'),
+(12, 6, 1, 'Order #6 has been placed successfully!', 1, '2025-11-01 19:18:56'),
+(13, 6, 1, 'Order #6 status updated to \'Cancelled\'.', 1, '2025-11-01 19:19:37'),
+(14, 7, 1, 'Order #7 has been placed successfully!', 1, '2025-11-01 19:20:31'),
+(15, 8, 1, 'Order #8 has been placed successfully!', 1, '2025-11-01 19:27:18'),
+(16, 8, 1, 'Order #8 status updated to \'Cancelled\'.', 1, '2025-11-01 19:29:04'),
+(17, 9, 1, 'Order #9 has been placed successfully!', 1, '2025-11-01 19:34:29'),
+(18, 10, 1, 'Order #10 has been placed successfully!', 1, '2025-11-01 19:36:24');
+
 -- --------------------------------------------------------
 
 --
@@ -115,6 +132,22 @@ CREATE TABLE `orders` (
   `payment_reference` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `orders`
+--
+
+INSERT INTO `orders` (`order_id`, `customer_id`, `order_date`, `order_status`, `date_received`, `delivery_address`, `payment_method`, `payment_reference`) VALUES
+(1, 1, '2025-11-01 13:51:15', 'Received', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(2, 1, '2025-11-01 13:53:26', 'Received', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(3, 1, '2025-11-01 14:43:18', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(4, 1, '2025-11-01 17:25:06', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(5, 1, '2025-11-01 17:39:17', 'Received', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(6, 1, '2025-11-01 19:18:56', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(7, 1, '2025-11-01 19:20:31', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(8, 1, '2025-11-01 19:27:18', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(9, 1, '2025-11-01 19:34:29', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(10, 1, '2025-11-01 19:36:24', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -128,6 +161,29 @@ CREATE TABLE `order_details` (
   `quantity` int(11) NOT NULL,
   `unit_price` decimal(10,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `order_details`
+--
+
+INSERT INTO `order_details` (`order_detail_id`, `order_id`, `product_id`, `quantity`, `unit_price`) VALUES
+(1, 1, 11, 2, 2000.00),
+(2, 1, 13, 1, 2900.00),
+(4, 2, 17, 1, 7000.00),
+(5, 3, 12, 1, 3500.00),
+(6, 3, 14, 1, 3000.00),
+(7, 3, 15, 1, 9500.00),
+(8, 4, 8, 1, 2500.00),
+(9, 4, 9, 1, 3200.00),
+(10, 4, 12, 1, 3500.00),
+(11, 5, 9, 1, 3200.00),
+(12, 5, 12, 1, 3500.00),
+(13, 5, 13, 1, 2900.00),
+(14, 6, 17, 10, 7000.00),
+(15, 7, 17, 5, 7000.00),
+(16, 8, 14, 4, 3000.00),
+(17, 9, 14, 4, 3000.00),
+(18, 10, 11, 8, 2000.00);
 
 -- --------------------------------------------------------
 
@@ -153,14 +209,15 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`product_id`, `product_name`, `description`, `category_id`, `supplier_id`, `price`, `stock_quantity`, `image_path`, `variant`, `is_active`) VALUES
-(8, 'Eclat', 'Fresh and elegant scent with citrus and floral notes.', 1, 1, 2500.00, 50, 'assets/images/perfumes/Eclat.png', 'EDP', 1),
-(9, 'Elixir', 'A luxurious fragrance with woody and oriental notes.', 1, 2, 3200.00, 40, 'assets/images/perfumes/Elixir.png', 'EDP', 1),
+(8, 'Eclat', 'Fresh and elegant scent with citrus and floral notes.', 2, 1, 2500.00, 49, 'assets/images/perfumes/Eclat.png', '50ml', 1),
+(9, 'Elixir', 'A luxurious fragrance with woody and oriental notes.', 1, 2, 3200.00, 38, 'assets/images/perfumes/Elixir.png', '50ml', 1),
 (10, 'Noir', 'Intense and mysterious fragrance with dark accords.', 2, 3, 2800.00, 30, 'assets/images/perfumes/Noir.png', 'EDT', 1),
-(11, 'Primus', 'Light and refreshing fragrance perfect for daily wear.', 2, 4, 2000.00, 60, 'assets/images/perfumes/Primus.png', 'EDT', 1),
-(12, 'Quartus', 'Bold and modern scent with spicy undertones.', 1, 5, 3500.00, 20, 'assets/images/perfumes/Quartus.png', 'EDP', 1),
-(13, 'Quintus', 'Soft and romantic fragrance with floral notes.', 3, 6, 2900.00, 35, 'assets/images/perfumes/Quintus.png', 'Perfume Oil', 1),
-(14, 'Sucundus', 'Classic fragrance with woody and citrus blend.', 3, 7, 3000.00, 25, 'assets/images/perfumes/Sucundus.png', 'Perfume Oil', 1),
-(15, 'Zenith', 'sample description', 1, 1, 9500.00, 10, 'assets/images/perfumes/perfume_69048ff8b306a4.05205285.png', '50ml', 1);
+(11, 'Primus', 'Eternal Bloom is a captivating floral-oriental fragrance that awakens the senses with a luminous bouquet of fresh jasmine, delicate rose, and velvety peony. Hints of sweet pear and zesty bergamot add a sparkling freshness, while warm notes of vanilla, amber, and soft musk linger on the skin, creating an aura of elegance and sophistication. Perfect for those who want to leave a lasting impression, this perfume embodies timeless beauty and subtle allure.', 1, 4, 2000.00, 58, 'assets/images/perfumes/Primus.png', 'EDT', 1),
+(12, 'Quartus', 'Bold and modern scent with spicy undertones.', 1, 5, 3500.00, 17, 'assets/images/perfumes/Quartus.png', 'EDP', 1),
+(13, 'Quintus', 'Soft and romantic fragrance with floral notes.', 2, 6, 2900.00, 33, 'assets/images/perfumes/Quintus.png', '50ml', 1),
+(14, 'Sucundus', 'Classic fragrance with woody and citrus blend.', 1, 7, 3000.00, 24, 'assets/images/perfumes/Sucundus.png', '50ml', 1),
+(15, 'Zenith', 'WDSF FEFAD WFWF DSF SEF', 1, 1, 9500.00, 15, 'assets/images/perfumes/perfume_69048ff8b306a4.05205285.png', '50ml', 1),
+(17, 'Odyssey', 'an enigmatic scent designed for the modern individual who commands attention. It opens with a crisp, magnetic freshness that transitions into a heart of rich, deep aromatic notes. The complex, woody base provides a long-lasting, sophisticated trail that speaks to unwavering confidence. Wearing PRESTIGE is more than just applying a fragrance; it\'s an affirmation of elegant power and refined taste.', 1, 9, 7000.00, 5, 'assets/images/perfumes/perfume_6904c78b1a1130.61554590.png', '50ml', 1);
 
 -- --------------------------------------------------------
 
@@ -215,7 +272,13 @@ CREATE TABLE `supply_logs` (
 --
 
 INSERT INTO `supply_logs` (`supply_id`, `product_id`, `supplier_id`, `quantity_added`, `quantity_remaining`, `supplier_price`, `supply_date`, `remarks`) VALUES
-(1, 15, 1, 10, 10, 7500.00, '2025-10-31 00:00:00', 'First Supplies');
+(1, 15, 1, 10, 10, 7500.00, '2025-10-31 00:00:00', 'First Supplies'),
+(3, 17, 9, 10, 10, 6500.00, '2025-10-31 00:00:00', 'First Supplies'),
+(5, 17, 9, 1, 10, 6500.00, '2025-11-01 00:00:00', 'Stock adjustment through product edit'),
+(6, 15, 1, 1, 10, 9000.00, '2025-11-01 00:00:00', 'Stock adjustment through product edit'),
+(7, 17, 9, 5, 15, NULL, '2025-11-01 18:11:54', 'Stock added via admin adjustment'),
+(8, 15, 1, 5, 15, NULL, '2025-11-01 18:13:32', 'Stock added via admin adjustment'),
+(9, 17, 9, 5, 20, 6500.00, '2025-11-01 19:05:36', 'Stock added via admin adjustment');
 
 -- --------------------------------------------------------
 
@@ -383,25 +446,25 @@ ALTER TABLE `customers`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `order_details`
 --
 ALTER TABLE `order_details`
-  MODIFY `order_detail_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `order_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
@@ -413,7 +476,7 @@ ALTER TABLE `suppliers`
 -- AUTO_INCREMENT for table `supply_logs`
 --
 ALTER TABLE `supply_logs`
-  MODIFY `supply_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `supply_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `users`
