@@ -240,7 +240,7 @@ $suppliers = $pdo->query("SELECT * FROM suppliers")->fetchAll();
 
             <div class="btn-container">
                 <button type="submit" class="btn btn-primary">Update Product</button>
-                <a href="manageproducts.php" class="btn btn-secondary">Cancel</a>
+                <a href="manageproducts.php" class="btn btn-primary">Cancel</a>
             </div>
         </form>
     </div>
