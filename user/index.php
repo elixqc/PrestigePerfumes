@@ -11,15 +11,51 @@ if (!isset($_SESSION['customer_id'])) {
 
 $customer_id = (int) $_SESSION['customer_id'];
 
-// ✅ Handle cancel order request
+// ✅ Handle cancel order request with stock restoration
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order_id'])) {
     $order_id = (int) $_POST['cancel_order_id'];
 
-    // Update order status only if it belongs to the user and still pending
-    $stmt = $conn->prepare("UPDATE orders SET order_status = 'Cancelled' WHERE order_id = ? AND customer_id = ? AND order_status = 'Pending'");
-    $stmt->bind_param("ii", $order_id, $customer_id);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Start transaction
+        $conn->begin_transaction();
+
+        // Check if order belongs to user and is still pending
+        $check_stmt = $conn->prepare("SELECT order_status FROM orders WHERE order_id = ? AND customer_id = ?");
+        $check_stmt->bind_param("ii", $order_id, $customer_id);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        $order = $result->fetch_assoc();
+        $check_stmt->close();
+
+        if ($order && $order['order_status'] === 'Pending') {
+            // Get all order items to restore stock
+            $items_stmt = $conn->prepare("SELECT product_id, quantity FROM order_details WHERE order_id = ?");
+            $items_stmt->bind_param("i", $order_id);
+            $items_stmt->execute();
+            $items_result = $items_stmt->get_result();
+
+            // Restore stock for each product
+            while ($item = $items_result->fetch_assoc()) {
+                $update_stock = $conn->prepare("UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?");
+                $update_stock->bind_param("ii", $item['quantity'], $item['product_id']);
+                $update_stock->execute();
+                $update_stock->close();
+            }
+            $items_stmt->close();
+
+            // Update order status to Cancelled
+            $cancel_stmt = $conn->prepare("UPDATE orders SET order_status = 'Cancelled' WHERE order_id = ?");
+            $cancel_stmt->bind_param("i", $order_id);
+            $cancel_stmt->execute();
+            $cancel_stmt->close();
+
+            // Commit transaction
+            $conn->commit();
+        }
+    } catch (Exception $e) {
+        // Rollback on error
+        $conn->rollback();
+    }
 
     header("Location: index.php");
     exit;
@@ -49,29 +85,43 @@ $stmt->execute();
 $orders = $stmt->get_result();
 ?>
 
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
 
 <main class="profile-dashboard">
   <div class="profile-container">
-    <h1 class="lux-title">Your Profile</h1>
-    <p class="lux-subtitle">Refined details, tailored for you</p>
+    <div class="page-header">
+      <h1 class="lux-title">Your Profile</h1>
+      <p class="lux-subtitle">Refined details, tailored for you</p>
+    </div>
 
     <div class="profile-card">
       <div class="profile-detail">
-        <p><strong>Name:</strong> <?php echo htmlspecialchars($customer['full_name']); ?></p>
-        <p><strong>Email:</strong> <?php echo htmlspecialchars($customer['email']); ?></p>
-        <p><strong>Contact:</strong> <?php echo htmlspecialchars($customer['contact_number']); ?></p>
-        <p><strong>Address:</strong> <?php echo htmlspecialchars($customer['address']); ?></p>
+        <div class="detail-row">
+          <span class="detail-label">Name</span>
+          <span class="detail-value"><?php echo htmlspecialchars($customer['full_name']); ?></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Email</span>
+          <span class="detail-value"><?php echo htmlspecialchars($customer['email']); ?></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Contact</span>
+          <span class="detail-value"><?php echo htmlspecialchars($customer['contact_number']); ?></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Address</span>
+          <span class="detail-value"><?php echo htmlspecialchars($customer['address']); ?></span>
+        </div>
       </div>
     </div>
 
     <div class="profile-actions">
-      <a href="edit_profile.php" class="btn"><span>Edit Info</span></a>
-      <a href="../user/logout.php" class="btn"><span>Logout</span></a>
+      <a href="edit_profile.php" class="btn btn-primary"><span>Edit Profile</span></a>
+      <a href="../user/logout.php" class="btn btn-secondary"><span>Logout</span></a>
       <form action="delete_account.php" method="POST" style="display:inline;">
         <button type="submit" name="delete_account" class="btn btn-danger"
-          onclick="return confirm('Delete your account permanently?');">
-          <span>Delete</span>
+          onclick="return confirm('Delete your account permanently? This action cannot be undone.');">
+          <span>Delete Account</span>
         </button>
       </form>
     </div>
@@ -80,65 +130,87 @@ $orders = $stmt->get_result();
     <!-- My Orders Section -->
     <!-- ========================= -->
     <section class="orders-section">
-      <h2 class="lux-title" style="margin-top:80px;">My Orders</h2>
-      <p class="lux-subtitle">Your recent purchases</p>
+      <div class="section-header">
+        <h2 class="lux-title">My Orders</h2>
+        <p class="lux-subtitle">Your recent purchases</p>
+      </div>
 
       <?php if ($orders->num_rows > 0): ?>
-        <?php while ($order = $orders->fetch_assoc()): ?>
-          <div class="order-card">
-            <div class="order-header">
-              <div>
-                <h3>Order #<?php echo $order['order_id']; ?></h3>
-                <p class="order-date"><?php echo date("F j, Y • g:i A", strtotime($order['order_date'])); ?></p>
+        <div class="orders-grid">
+          <?php while ($order = $orders->fetch_assoc()): ?>
+            <div class="order-card">
+              <div class="order-header">
+                <div class="order-info">
+                  <h3 class="order-number">Order #<?php echo $order['order_id']; ?></h3>
+                  <p class="order-date"><?php echo date("M j, Y • g:i A", strtotime($order['order_date'])); ?></p>
+                </div>
+                <span class="order-status <?php echo strtolower(str_replace(' ', '-', $order['order_status'])); ?>">
+                  <?php echo htmlspecialchars($order['order_status']); ?>
+                </span>
               </div>
-              <span class="order-status <?php echo strtolower(str_replace(' ', '-', $order['order_status'])); ?>">
-                <?php echo htmlspecialchars($order['order_status']); ?>
-              </span>
-            </div>
 
-            <div class="order-details">
-              <p><strong>Delivery:</strong> <?php echo htmlspecialchars($order['delivery_address']); ?></p>
-              <p><strong>Payment:</strong> <?php echo htmlspecialchars($order['payment_method']); ?></p>
-
-              <?php
-              $detail_stmt = $conn->prepare("
-                  SELECT p.product_name, od.quantity, od.unit_price
-                  FROM order_details od
-                  JOIN products p ON od.product_id = p.product_id
-                  WHERE od.order_id = ?
-              ");
-              $detail_stmt->bind_param("i", $order['order_id']);
-              $detail_stmt->execute();
-              $items = $detail_stmt->get_result();
-              ?>
-
-              <div class="order-items">
-                <?php while ($item = $items->fetch_assoc()): ?>
-                  <div class="order-item">
-                    <span class="item-name"><?php echo htmlspecialchars($item['product_name']); ?></span>
-                    <span class="item-qty">x<?php echo $item['quantity']; ?></span>
-                    <span class="item-price">₱<?php echo number_format($item['unit_price'], 2); ?></span>
+              <div class="order-body">
+                <div class="order-meta">
+                  <div class="meta-item">
+                    <span class="meta-label">Delivery</span>
+                    <span class="meta-value"><?php echo htmlspecialchars($order['delivery_address']); ?></span>
                   </div>
-                <?php endwhile; ?>
-              </div>
-              <?php $detail_stmt->close(); ?>
+                  <div class="meta-item">
+                    <span class="meta-label">Payment</span>
+                    <span class="meta-value"><?php echo htmlspecialchars($order['payment_method']); ?></span>
+                  </div>
+                </div>
 
-              <div class="order-total">
-                <p><strong>Total:</strong> ₱<?php echo number_format($order['total_amount'], 2); ?></p>
-              </div>
+                <?php
+                $detail_stmt = $conn->prepare("
+                    SELECT p.product_name, od.quantity, od.unit_price
+                    FROM order_details od
+                    JOIN products p ON od.product_id = p.product_id
+                    WHERE od.order_id = ?
+                ");
+                $detail_stmt->bind_param("i", $order['order_id']);
+                $detail_stmt->execute();
+                $items = $detail_stmt->get_result();
+                ?>
 
-              <!-- ✅ Cancel Order Button -->
-              <?php if (strtolower($order['order_status']) === 'pending'): ?>
-                <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');" class="cancel-form">
-                  <input type="hidden" name="cancel_order_id" value="<?php echo $order['order_id']; ?>">
-                  <button type="submit" class="btn-cancel">Cancel Order</button>
-                </form>
-              <?php endif; ?>
+                <div class="order-items">
+                  <div class="items-header">Order Items</div>
+                  <?php while ($item = $items->fetch_assoc()): ?>
+                    <div class="order-item">
+                      <span class="item-name"><?php echo htmlspecialchars($item['product_name']); ?></span>
+                      <span class="item-qty">×<?php echo $item['quantity']; ?></span>
+                      <span class="item-price">₱<?php echo number_format($item['unit_price'], 2); ?></span>
+                    </div>
+                  <?php endwhile; ?>
+                </div>
+                <?php $detail_stmt->close(); ?>
+
+                <div class="order-footer">
+                  <div class="order-total">
+                    <span class="total-label">Total Amount</span>
+                    <span class="total-value">₱<?php echo number_format($order['total_amount'], 2); ?></span>
+                  </div>
+
+                  <?php if (strtolower($order['order_status']) === 'pending'): ?>
+                    <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this order? Items will be returned to stock.');" class="cancel-form">
+                      <input type="hidden" name="cancel_order_id" value="<?php echo $order['order_id']; ?>">
+                      <button type="submit" class="btn-cancel"><span>Cancel Order</span></button>
+                    </form>
+                  <?php endif; ?>
+                </div>
+              </div>
             </div>
-          </div>
-        <?php endwhile; ?>
+          <?php endwhile; ?>
+        </div>
       <?php else: ?>
-        <p class="no-orders">You haven’t placed any orders yet.</p>
+        <div class="no-orders">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          <p>You haven't placed any orders yet.</p>
+          <a href="../shop.php" class="btn btn-primary" style="margin-top: 20px;"><span>Start Shopping</span></a>
+        </div>
       <?php endif; ?>
     </section>
   </div>
@@ -162,34 +234,38 @@ body {
 
 .profile-dashboard {
   min-height: 100vh;
-  padding: 120px 40px 80px;
+  padding: 100px 30px 60px;
   background: linear-gradient(to bottom, #fafafa 0%, #ffffff 100%);
 }
 
 .profile-container {
-  max-width: 1100px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-/* ===== LUXURY TITLES ===== */
+/* ===== PAGE HEADER ===== */
+.page-header {
+  text-align: center;
+  margin-bottom: 50px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
 .lux-title {
   font-family: 'Playfair Display', serif;
-  font-size: 48px;
+  font-size: 36px;
   font-weight: 400;
   letter-spacing: 0.5px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   color: #0a0a0a;
-  text-align: center;
 }
 
 .lux-subtitle {
   font-family: 'Montserrat', sans-serif;
-  font-size: 11px;
-  letter-spacing: 3px;
+  font-size: 10px;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
   color: rgba(0,0,0,0.5);
-  margin-bottom: 60px;
-  text-align: center;
   font-weight: 400;
 }
 
@@ -197,76 +273,62 @@ body {
 .profile-card {
   background: #ffffff;
   border: 1px solid rgba(0,0,0,0.08);
-  padding: 60px;
-  margin: 0 auto 50px;
-  max-width: 800px;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.8s ease;
-}
-
-.profile-card:hover::before {
-  transform: translateX(100%);
+  padding: 40px;
+  margin-bottom: 30px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .profile-card:hover {
-  border-color: rgba(0,0,0,0.15);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
+  border-color: rgba(0,0,0,0.12);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.06);
 }
 
 .profile-detail {
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.profile-detail p {
-  font-size: 15px;
-  line-height: 2.2;
-  color: #2a2a2a;
-  letter-spacing: 0.3px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+.detail-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 20px;
   padding: 18px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
   transition: all 0.3s ease;
+  align-items: center;
 }
 
-.profile-detail p:last-child {
+.detail-row:last-child {
   border-bottom: none;
 }
 
-.profile-detail p:hover {
-  padding-left: 12px;
-  color: #0a0a0a;
+.detail-row:hover {
+  padding-left: 8px;
+  background: rgba(0,0,0,0.01);
 }
 
-.profile-detail strong {
-  display: inline-block;
-  min-width: 120px;
-  font-weight: 500;
-  color: #0a0a0a;
-  font-size: 11px;
+.detail-label {
+  font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
+  color: rgba(0,0,0,0.6);
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 13px;
+  color: #2a2a2a;
+  letter-spacing: 0.3px;
 }
 
 /* ===== PROFILE ACTIONS ===== */
 .profile-actions {
   display: flex;
-  gap: 20px;
+  gap: 15px;
   justify-content: center;
   align-items: center;
-  margin: 60px 0 100px;
+  margin: 40px 0 60px;
   flex-wrap: wrap;
 }
 
@@ -274,20 +336,20 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 48px;
-  border: 1px solid rgba(0,0,0,0.2);
+  padding: 12px 32px;
+  border: 1px solid rgba(0,0,0,0.15);
   background: transparent;
   color: #0a0a0a;
   text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 2.5px;
+  font-size: 9px;
+  letter-spacing: 2px;
   font-weight: 500;
   position: relative;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   cursor: pointer;
-  min-width: 180px;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .btn span {
@@ -320,8 +382,12 @@ body {
   color: #ffffff;
 }
 
+.btn-secondary {
+  border-color: rgba(0,0,0,0.12);
+}
+
 .btn-danger {
-  border-color: rgba(176,42,55,0.3);
+  border-color: rgba(176,42,55,0.25);
   color: #b02a37;
 }
 
@@ -335,89 +401,76 @@ body {
 
 /* ===== ORDERS SECTION ===== */
 .orders-section {
-  margin-top: 120px;
-  padding-top: 80px;
-  border-top: 1px solid rgba(0,0,0,0.08);
+  margin-top: 80px;
+  padding-top: 50px;
+  border-top: 1px solid rgba(0,0,0,0.06);
 }
 
-.orders-section .lux-title {
-  margin-bottom: 12px;
+.section-header {
+  text-align: center;
+  margin-bottom: 50px;
 }
 
-.orders-section .lux-subtitle {
-  margin-bottom: 80px;
+.section-header .lux-title {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.orders-grid {
+  display: grid;
+  gap: 30px;
 }
 
 .order-card {
   background: #ffffff;
   border: 1px solid rgba(0,0,0,0.08);
-  padding: 50px;
-  margin-bottom: 40px;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-}
-
-.order-card::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 1px;
-  background: #0a0a0a;
-  transition: width 0.5s ease;
-}
-
-.order-card:hover::after {
-  width: 90%;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .order-card:hover {
   border-color: rgba(0,0,0,0.15);
-  box-shadow: 0 25px 70px rgba(0,0,0,0.08);
-  transform: translateY(-3px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
 }
 
 .order-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 40px;
-  padding-bottom: 30px;
+  align-items: center;
+  padding: 25px 30px;
+  background: #fafafa;
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
-.order-header h3 {
+.order-number {
   font-family: 'Playfair Display', serif;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 400;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: #0a0a0a;
 }
 
 .order-date {
-  font-size: 11px;
-  letter-spacing: 1.5px;
+  font-size: 10px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   color: rgba(0,0,0,0.5);
   font-weight: 400;
 }
 
 .order-status {
-  padding: 10px 24px;
-  font-size: 9px;
-  letter-spacing: 2px;
+  padding: 6px 18px;
+  font-size: 8px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   font-weight: 600;
   color: #ffffff;
-  border-radius: 2px;
   transition: all 0.3s ease;
 }
 
 .order-status:hover {
   transform: scale(1.05);
-  letter-spacing: 2.5px;
 }
 
 .order-status.pending { background: #8b8b8b; }
@@ -425,58 +478,75 @@ body {
 .order-status.received { background: #0a0a0a; }
 .order-status.on-the-way { background: #4a4a4a; }
 
-.order-details {
-  text-align: left;
+.order-body {
+  padding: 30px;
 }
 
-.order-details > p {
-  font-size: 14px;
-  margin-bottom: 16px;
+.order-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meta-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.5);
+  font-weight: 500;
+}
+
+.meta-value {
+  font-size: 12px;
   color: #2a2a2a;
   letter-spacing: 0.3px;
-  line-height: 1.8;
-}
-
-.order-details strong {
-  font-weight: 500;
-  color: #0a0a0a;
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-right: 12px;
 }
 
 .order-items {
-  margin: 35px 0;
-  padding: 30px;
   background: #fafafa;
-  border-left: 2px solid rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+  padding: 20px;
+  margin-bottom: 25px;
 }
 
-.order-items:hover {
-  border-left-color: #0a0a0a;
-  background: #f7f7f7;
+.items-header {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.6);
+  font-weight: 500;
+  margin-bottom: 15px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
 }
 
 .order-item {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 20px;
+  gap: 15px;
   align-items: center;
-  font-size: 13px;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-size: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
   transition: all 0.3s ease;
 }
 
 .order-item:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .order-item:hover {
-  padding-left: 10px;
-  color: #0a0a0a;
+  padding-left: 6px;
 }
 
 .item-name {
@@ -487,59 +557,75 @@ body {
 
 .item-qty {
   font-size: 11px;
-  color: rgba(0,0,0,0.6);
-  letter-spacing: 1px;
+  color: rgba(0,0,0,0.5);
+  letter-spacing: 0.5px;
+  min-width: 30px;
   text-align: center;
 }
 
 .item-price {
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   text-align: right;
   color: #0a0a0a;
+  min-width: 90px;
+}
+
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .order-total {
-  margin-top: 30px;
-  padding-top: 25px;
-  border-top: 2px solid rgba(0,0,0,0.1);
-  text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.order-total p {
-  font-size: 16px;
-  letter-spacing: 0.5px;
-}
-
-.order-total strong {
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 2.5px;
+.total-label {
+  font-size: 9px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  margin-right: 16px;
+  color: rgba(0,0,0,0.6);
+  font-weight: 500;
+}
+
+.total-value {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #0a0a0a;
 }
 
 /* ===== CANCEL BUTTON ===== */
 .cancel-form {
-  margin-top: 30px;
-  padding-top: 20px;
-  text-align: right;
-  border-top: 1px solid rgba(0,0,0,0.05);
+  display: inline-block;
 }
 
 .btn-cancel {
   background: transparent;
-  border: 1px solid rgba(0,0,0,0.2);
+  border: 1px solid rgba(0,0,0,0.15);
   color: #0a0a0a;
-  font-size: 10px;
-  padding: 12px 36px;
-  letter-spacing: 2.5px;
+  font-size: 8px;
+  padding: 10px 24px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.btn-cancel span {
+  position: relative;
+  z-index: 2;
 }
 
 .btn-cancel::before {
@@ -551,7 +637,7 @@ body {
   height: 100%;
   background: #0a0a0a;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 0;
+  z-index: 1;
 }
 
 .btn-cancel:hover::before {
@@ -559,15 +645,26 @@ body {
 }
 
 .btn-cancel:hover {
-  color: #ffffff;
   border-color: #0a0a0a;
+}
+
+.btn-cancel:hover span {
+  color: #ffffff;
 }
 
 .no-orders {
   text-align: center;
+  padding: 80px 20px;
   color: rgba(0,0,0,0.4);
-  margin-top: 80px;
-  font-size: 13px;
+}
+
+.no-orders svg {
+  margin-bottom: 20px;
+  opacity: 0.3;
+}
+
+.no-orders p {
+  font-size: 12px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   font-weight: 400;
@@ -576,72 +673,94 @@ body {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .profile-dashboard {
-    padding: 80px 20px 60px;
+    padding: 80px 20px 50px;
+  }
+
+  .page-header {
+    margin-bottom: 40px;
+    padding-bottom: 25px;
   }
 
   .lux-title {
-    font-size: 36px;
+    font-size: 28px;
   }
 
   .lux-subtitle {
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 2px;
-    margin-bottom: 40px;
   }
 
   .profile-card {
-    padding: 40px 30px;
+    padding: 30px 25px;
   }
 
-  .profile-detail strong {
-    display: block;
-    margin-bottom: 6px;
+  .detail-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 16px 0;
+  }
+
+  .detail-label {
+    font-size: 9px;
   }
 
   .profile-actions {
     flex-direction: column;
-    gap: 15px;
-    margin: 40px 0 80px;
+    gap: 12px;
+    margin: 30px 0 50px;
   }
 
   .btn {
     width: 100%;
-    min-width: auto;
+    padding: 14px 0;
   }
 
   .orders-section {
-    margin-top: 80px;
-    padding-top: 60px;
+    margin-top: 60px;
+    padding-top: 40px;
   }
 
-  .order-card {
-    padding: 30px 25px;
+  .section-header {
+    margin-bottom: 40px;
+  }
+
+  .section-header .lux-title {
+    font-size: 26px;
+  }
+
+  .orders-grid {
+    gap: 25px;
   }
 
   .order-header {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px 25px;
+  }
+
+  .order-number {
+    font-size: 16px;
+  }
+
+  .order-body {
+    padding: 25px 20px;
+  }
+
+  .order-meta {
+    grid-template-columns: 1fr;
     gap: 16px;
-    margin-bottom: 30px;
-    padding-bottom: 25px;
-  }
-
-  .order-header h3 {
-    font-size: 20px;
-  }
-
-  .order-status {
-    align-self: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
   }
 
   .order-items {
-    padding: 20px;
-    margin: 25px 0;
+    padding: 16px;
   }
 
   .order-item {
     grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 16px 0;
+    gap: 6px;
   }
 
   .item-qty,
@@ -649,26 +768,40 @@ body {
     text-align: left;
   }
 
-  .cancel-form {
-    text-align: center;
+  .order-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .order-total {
+    justify-content: space-between;
   }
 
   .btn-cancel {
     width: 100%;
   }
+
+  .no-orders {
+    padding: 60px 20px;
+  }
 }
 
 @media (max-width: 480px) {
   .lux-title {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .profile-card {
-    padding: 30px 20px;
+    padding: 25px 20px;
   }
 
-  .order-card {
-    padding: 25px 20px;
+  .order-header {
+    padding: 18px 20px;
+  }
+
+  .order-body {
+    padding: 20px 16px;
   }
 }
 </style>

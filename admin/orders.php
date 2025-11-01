@@ -19,11 +19,65 @@ if (isset($_POST['update_status'])) {
     $order_id = intval($_POST['order_id']);
     $new_status = trim($_POST['new_status']);
 
-    // Update order status in orders table
-    $update = $pdo->prepare("UPDATE orders SET order_status = ? WHERE order_id = ?");
-    if ($update->execute([$new_status, $order_id])) {
+    try {
+        // Start transaction
+        $pdo->beginTransaction();
 
-        // fetch customer_id for notification
+        // Get the current order status
+        $getOrder = $pdo->prepare("SELECT order_status FROM orders WHERE order_id = ?");
+        $getOrder->execute([$order_id]);
+        $orderData = $getOrder->fetch(PDO::FETCH_ASSOC);
+        $old_status = $orderData['order_status'];
+
+        // If changing TO "Cancelled" status, restore product quantities
+        if ($new_status === 'Cancelled' && $old_status !== 'Cancelled') {
+            // Get all order items
+            $getItems = $pdo->prepare("
+                SELECT product_id, quantity 
+                FROM order_details 
+                WHERE order_id = ?
+            ");
+            $getItems->execute([$order_id]);
+            $items = $getItems->fetchAll(PDO::FETCH_ASSOC);
+
+            // Restore quantity for each product
+            foreach ($items as $item) {
+                $updateStock = $pdo->prepare("
+                    UPDATE products 
+                    SET stock_quantity = stock_quantity + ? 
+                    WHERE product_id = ?
+                ");
+                $updateStock->execute([$item['quantity'], $item['product_id']]);
+            }
+        }
+
+        // If changing FROM "Cancelled" to another status, deduct quantities again
+        if ($old_status === 'Cancelled' && $new_status !== 'Cancelled') {
+            // Get all order items
+            $getItems = $pdo->prepare("
+                SELECT product_id, quantity 
+                FROM order_details 
+                WHERE order_id = ?
+            ");
+            $getItems->execute([$order_id]);
+            $items = $getItems->fetchAll(PDO::FETCH_ASSOC);
+
+            // Deduct quantity for each product
+            foreach ($items as $item) {
+                $updateStock = $pdo->prepare("
+                    UPDATE products 
+                    SET stock_quantity = stock_quantity - ? 
+                    WHERE product_id = ?
+                ");
+                $updateStock->execute([$item['quantity'], $item['product_id']]);
+            }
+        }
+
+        // Update order status in orders table
+        $update = $pdo->prepare("UPDATE orders SET order_status = ? WHERE order_id = ?");
+        $update->execute([$new_status, $order_id]);
+
+        // Fetch customer_id for notification
         $getCust = $pdo->prepare("SELECT customer_id FROM orders WHERE order_id = ?");
         $getCust->execute([$order_id]);
         $row = $getCust->fetch(PDO::FETCH_ASSOC);
@@ -39,9 +93,14 @@ if (isset($_POST['update_status'])) {
             $notif->execute([$order_id, $customer_id, $msg]);
         }
 
+        // Commit transaction
+        $pdo->commit();
+
         $success_message = "Order #{$order_id} status updated to '{$new_status}'.";
-    } else {
-        $error_message = "Unable to update order #{$order_id}.";
+    } catch (Exception $e) {
+        // Rollback on error
+        $pdo->rollBack();
+        $error_message = "Unable to update order #{$order_id}. Error: " . $e->getMessage();
     }
 }
 
@@ -103,7 +162,7 @@ switch ($sort_by) {
 
 $orders = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
 
-// Get statistics
+// Get statistics - FIXED: Only count revenue from "Received" orders
 $stats_query = "
     SELECT 
         COUNT(*) as total_orders,
@@ -113,7 +172,8 @@ $stats_query = "
         SUM(CASE WHEN order_status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled,
         (SELECT IFNULL(SUM(od.quantity * od.unit_price), 0) 
          FROM order_details od 
-         JOIN orders o2 ON od.order_id = o2.order_id) as total_revenue
+         JOIN orders o2 ON od.order_id = o2.order_id
+         WHERE o2.order_status = 'Received') as total_revenue
     FROM orders
 ";
 $stats = $pdo->query($stats_query)->fetch(PDO::FETCH_ASSOC);
@@ -176,7 +236,7 @@ $stats = $pdo->query($stats_query)->fetch(PDO::FETCH_ASSOC);
                 <div class="stat-icon"><i class="fas fa-peso-sign"></i></div>
                 <div class="stat-content">
                     <div class="stat-value">₱<?= number_format($stats['total_revenue'], 2); ?></div>
-                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-label">Total Revenue (Received)</div>
                 </div>
             </div>
         </div>

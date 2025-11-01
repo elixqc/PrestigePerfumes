@@ -37,6 +37,7 @@ if (isset($_SESSION['customer_id'])) {
             </a>
             
             <ul class="nav-links">
+                <li><a href="/prestigeperfumes/index.php">Home</a></li>
                 <li><a href="/prestigeperfumes/items/index.php">Collections</a></li>
                 <li><a href="/prestigeperfumes/about.php">Maison</a></li>
                 <li><a href="/prestigeperfumes/items/cart.php">Cart</a></li>
