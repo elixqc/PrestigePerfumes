@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 01, 2025 at 12:57 PM
+-- Generation Time: Nov 02, 2025 at 12:57 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -74,7 +74,8 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`customer_id`, `full_name`, `contact_number`, `address`, `email`, `password`) VALUES
-(1, 'nico barredo', '09930536452', 'taguig city', 'nicobarredo87@gmail.com', '$2y$10$sdOo4FqFO2YX3a3DSZKRD.TUFnvuZLVRxNx3So2IpyXMTv.4N2R/a');
+(1, 'nico barredo', '09930536452', 'taguig city', 'nicobarredo87@gmail.com', '$2y$10$sdOo4FqFO2YX3a3DSZKRD.TUFnvuZLVRxNx3So2IpyXMTv.4N2R/a'),
+(2, 'Trisha Mia Morales', '92752342323', 'Signal Taguig City', 'tmorales@gmail.com', '$2y$10$VlF/qSMrU.sVv8xIQBg5oeQ7nEvkOky4yTsJO7tzQ2MROWlCaax62');
 
 -- --------------------------------------------------------
 
@@ -113,7 +114,12 @@ INSERT INTO `notifications` (`notification_id`, `order_id`, `customer_id`, `mess
 (15, 8, 1, 'Order #8 has been placed successfully!', 1, '2025-11-01 19:27:18'),
 (16, 8, 1, 'Order #8 status updated to \'Cancelled\'.', 1, '2025-11-01 19:29:04'),
 (17, 9, 1, 'Order #9 has been placed successfully!', 1, '2025-11-01 19:34:29'),
-(18, 10, 1, 'Order #10 has been placed successfully!', 1, '2025-11-01 19:36:24');
+(18, 10, 1, 'Order #10 has been placed successfully!', 1, '2025-11-01 19:36:24'),
+(19, 11, 1, 'Order #11 has been placed successfully!', 1, '2025-11-01 23:10:28'),
+(20, 11, 1, 'Order #11 status updated to \'On the Way\'.', 1, '2025-11-01 23:11:08'),
+(21, 12, 2, 'Order #12 has been placed successfully!', 1, '2025-11-02 16:53:20'),
+(22, 11, 1, 'Order #11 status updated to \'Received\'.', 1, '2025-11-02 17:21:05'),
+(23, 13, 1, 'Order #13 has been placed successfully!', 1, '2025-11-02 18:04:23');
 
 -- --------------------------------------------------------
 
@@ -146,7 +152,10 @@ INSERT INTO `orders` (`order_id`, `customer_id`, `order_date`, `order_status`, `
 (7, 1, '2025-11-01 19:20:31', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
 (8, 1, '2025-11-01 19:27:18', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
 (9, 1, '2025-11-01 19:34:29', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
-(10, 1, '2025-11-01 19:36:24', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL);
+(10, 1, '2025-11-01 19:36:24', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL),
+(11, 1, '2025-11-01 23:10:28', 'Received', NULL, 'makati city maangas na city', 'Cash on Delivery', NULL),
+(12, 2, '2025-11-02 16:53:20', 'Pending', NULL, 'Signal Taguig City', 'Cash on Delivery', NULL),
+(13, 1, '2025-11-02 18:04:23', 'Cancelled', NULL, 'taguig city', 'Cash on Delivery', NULL);
 
 -- --------------------------------------------------------
 
@@ -183,7 +192,12 @@ INSERT INTO `order_details` (`order_detail_id`, `order_id`, `product_id`, `quant
 (15, 7, 17, 5, 7000.00),
 (16, 8, 14, 4, 3000.00),
 (17, 9, 14, 4, 3000.00),
-(18, 10, 11, 8, 2000.00);
+(18, 10, 11, 8, 2000.00),
+(19, 11, 11, 1, 2000.00),
+(20, 11, 14, 1, 3000.00),
+(21, 11, 15, 1, 9500.00),
+(22, 12, 9, 1, 3200.00),
+(23, 12, 11, 1, 2000.00);
 
 -- --------------------------------------------------------
 
@@ -209,15 +223,22 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`product_id`, `product_name`, `description`, `category_id`, `supplier_id`, `price`, `stock_quantity`, `image_path`, `variant`, `is_active`) VALUES
-(8, 'Eclat', 'Fresh and elegant scent with citrus and floral notes.', 2, 1, 2500.00, 49, 'assets/images/perfumes/Eclat.png', '50ml', 1),
-(9, 'Elixir', 'A luxurious fragrance with woody and oriental notes.', 1, 2, 3200.00, 38, 'assets/images/perfumes/Elixir.png', '50ml', 1),
+(8, 'Eclat', 'Fresh and elegant scent with citrus and floral notes.', 2, 1, 2500.00, 30, 'assets/images/perfumes/Eclat.png', '50ml', 1),
+(9, 'Elixir', 'A luxurious fragrance with woody and oriental notes.', 1, 2, 3200.00, 37, 'assets/images/perfumes/Elixir.png', '50ml', 1),
 (10, 'Noir', 'Intense and mysterious fragrance with dark accords.', 2, 3, 2800.00, 30, 'assets/images/perfumes/Noir.png', 'EDT', 1),
-(11, 'Primus', 'Eternal Bloom is a captivating floral-oriental fragrance that awakens the senses with a luminous bouquet of fresh jasmine, delicate rose, and velvety peony. Hints of sweet pear and zesty bergamot add a sparkling freshness, while warm notes of vanilla, amber, and soft musk linger on the skin, creating an aura of elegance and sophistication. Perfect for those who want to leave a lasting impression, this perfume embodies timeless beauty and subtle allure.', 1, 4, 2000.00, 58, 'assets/images/perfumes/Primus.png', 'EDT', 1),
+(11, 'Primus', 'Eternal Bloom is a captivating floral-oriental fragrance that awakens the senses with a luminous bouquet of fresh jasmine, delicate rose, and velvety peony. Hints of sweet pear and zesty bergamot add a sparkling freshness, while warm notes of vanilla, amber, and soft musk linger on the skin, creating an aura of elegance and sophistication. Perfect for those who want to leave a lasting impression, this perfume embodies timeless beauty and subtle allure.', 1, 4, 2000.00, 56, 'assets/images/perfumes/Primus.png', 'EDT', 1),
 (12, 'Quartus', 'Bold and modern scent with spicy undertones.', 1, 5, 3500.00, 17, 'assets/images/perfumes/Quartus.png', 'EDP', 1),
 (13, 'Quintus', 'Soft and romantic fragrance with floral notes.', 2, 6, 2900.00, 33, 'assets/images/perfumes/Quintus.png', '50ml', 1),
-(14, 'Sucundus', 'Classic fragrance with woody and citrus blend.', 1, 7, 3000.00, 24, 'assets/images/perfumes/Sucundus.png', '50ml', 1),
-(15, 'Zenith', 'WDSF FEFAD WFWF DSF SEF', 1, 1, 9500.00, 15, 'assets/images/perfumes/perfume_69048ff8b306a4.05205285.png', '50ml', 1),
-(17, 'Odyssey', 'an enigmatic scent designed for the modern individual who commands attention. It opens with a crisp, magnetic freshness that transitions into a heart of rich, deep aromatic notes. The complex, woody base provides a long-lasting, sophisticated trail that speaks to unwavering confidence. Wearing PRESTIGE is more than just applying a fragrance; it\'s an affirmation of elegant power and refined taste.', 1, 9, 7000.00, 5, 'assets/images/perfumes/perfume_6904c78b1a1130.61554590.png', '50ml', 1);
+(14, 'Sucundus', 'Classic fragrance with woody and citrus blend.', 1, 7, 3000.00, 23, 'assets/images/perfumes/Sucundus.png', '50ml', 1),
+(15, 'Zenith', 'WDSF FEFAD WFWF DSF SEF', 1, 1, 9500.00, 14, 'assets/images/perfumes/perfume_69048ff8b306a4.05205285.png', '50ml', 1),
+(17, 'Odyssey', 'an enigmatic scent designed for the modern individual who commands attention. It opens with a crisp, magnetic freshness that transitions into a heart of rich, deep aromatic notes. The complex, woody base provides a long-lasting, sophisticated trail that speaks to unwavering confidence. Wearing PRESTIGE is more than just applying a fragrance; it\'s an affirmation of elegant power and refined taste.', 1, 9, 7000.00, 10, 'assets/images/perfumes/perfume_6904c78b1a1130.61554590.png', '50ml', 1),
+(19, 'Lion', 'a majestic and indomitable fragrance, a symbol of power and confidence. It opens with bright, daring notes of Bergamot and Lemon, which quickly transition to a warm, carnal heart of Labdanum and rich Amber. The scent settles into a sophisticated, long-lasting base of creamy Vanilla, earthy Patchouli, and Musk, creating a refined, powerful, and utterly captivating presence. This is an evening scent for those who command a room.', 2, 8, 4999.00, 20, 'assets/images/perfumes/perfume_6907239486e357.87391510.png', '50ml', 1),
+(20, 'Naxos', 'an opulent and enveloping fragrance that captures the warmth and richness of the Sicilian landscape. This unisex masterpiece opens with a bright, luminous breath of Mediterranean Bergamot and zesty Lemon, blended with the classic, soothing herbal comfort of Lavender.\r\n\r\nThe heart of the fragrance transitions to an irresistible, decadent gourmand sweetness. A sensual, warm blend of Honey and spicy Cinnamon is enriched by creamy Cashmeran and a hint of elegant Jasmine Sambac.', 2, 2, 5499.00, 25, 'assets/images/perfumes/perfume_6907248e1b9ec6.12969957.png', '50ml', 1),
+(21, 'Side Effect', 'A unique and captivating fragrance designed to soothe the soul and elevate the senses. This elegant scent is an ode to the power of olfactive therapy, creating a feeling of profound calm and contentment.\r\n\r\nIt opens with an uplifting and invigorating burst of natural Bergamot and juicy Mandarin, instantly refreshing and bright. The heart unfolds into a clean, creamy blend of White Magnolia and subtle Cassis (blackcurrant), adding a delicate floral sweetness and a touch of fruity sophistication.', 1, 5, 8999.00, 30, 'assets/images/perfumes/perfume_69072582577124.84047997.png', '50ml', 1),
+(22, 'Temptation', 'an intensely captivating and sophisticated fragrance, designed to draw you into its rich embrace. This luxurious scent is a symphony of opulent florals, warm spices, and deep, sensual woods, crafted for those who dare to explore their most alluring self.\r\n\r\nThe fragrance opens with a vibrant, sparkling freshness of Pink Pepper and a delicate touch of Bergamot, which quickly gives way to a grand, intoxicating heart. Here, the lavish bloom of Turkish Rose unfurls, its velvety petals intertwined with the warm, spicy complexity of Hedione and the sweet, resinous depth of Labdanum.', 1, 7, 9999.00, 30, 'assets/images/perfumes/perfume_6907277cea4220.39779798.png', '50ml', 1),
+(24, 'Animalique', 'a captivating and gender-free fragrance that explores the delicate balance between civilized sophistication and untamed instinct. It\'s a scent that invites the wearer to connect with their true, inherent self, like discovering the spirit animal that lies beneath the surface.\r\n\r\nThe fragrance begins with an uplifting and immediate clarity, featuring fresh, zesty notes of Bergamot and Lemon. This sparkling opening quickly settles into a soft, powdery heart where the warm, delicate florals of Mimosa and Violet create an enveloping, sensual softness.', 1, 3, 6999.00, 20, 'assets/images/perfumes/perfume_69072d015e4dc9.50400403.png', '50ml', 1),
+(25, 'New York', 'a bold, sophisticated scent that captures the exhilarating rush and deep, complex character of Manhattan. It’s an ode to architectural splendor, late nights, and the exhilarating feeling of limitless possibility.. The fragrance opens with a vibrant burst, like a flash of light reflecting off a skyscraper. Bright Bergamot and sharp Lemon mirror the quick pace and electric energy of a perfect day on Fifth Avenue.', 1, 7, 3999.00, 15, 'assets/images/perfumes/perfume_69072e816bf0b5.97777906.png', '50ml', 1),
+(26, 'Iconic', 'a powerful and seductive fragrance for men, designed to embody the strength and passion of the Greek God of love, Eros. Classified as a Woody Oriental Fresh scent, it opens with a vibrant burst of Italian zest, featuring Lemon, Mandarin, and a sweet hint of Candied Apple combined with refreshing Mint oil. This luminous freshness then settles into a warmer, more sensual heart of Clary Sage and Geranium, before concluding with a rich, long-lasting base where deep Cedarwood and Patchouli blend with creamy Vanilla to create an irresistible, magnetic, and confident trail.', 1, 4, 10000.00, 10, 'assets/images/perfumes/perfume_690732483c3f58.04318564.png', '50ml', 1);
 
 -- --------------------------------------------------------
 
@@ -247,8 +268,7 @@ INSERT INTO `suppliers` (`supplier_id`, `supplier_name`, `contact_person`, `cont
 (6, 'Fragrance Hub', 'Ricardo Tan', '09671234567', '34 Aroma Lane, Mandaluyong', 1),
 (7, 'Elite Perfumeries', 'Luz Villanueva', '09781234567', '56 Scent Plaza, Manila', 1),
 (8, 'Divine Essence', 'Roberto Cruz', '09891234567', '67 Perfume Street, Quezon City', 1),
-(9, 'Aromatic Touch', 'Sofia Ramos', '09901234567', '89 Fragrance Blvd, Makati', 1),
-(10, 'Noble Scents', 'Miguel Fernandez', '09181234567', '101 Aroma Avenue, Taguig', 1);
+(9, 'Aromatic Touch', 'Sofia Ramos', '09901234567', '89 Fragrance Blvd, Makati', 1);
 
 -- --------------------------------------------------------
 
@@ -278,7 +298,16 @@ INSERT INTO `supply_logs` (`supply_id`, `product_id`, `supplier_id`, `quantity_a
 (6, 15, 1, 1, 10, 9000.00, '2025-11-01 00:00:00', 'Stock adjustment through product edit'),
 (7, 17, 9, 5, 15, NULL, '2025-11-01 18:11:54', 'Stock added via admin adjustment'),
 (8, 15, 1, 5, 15, NULL, '2025-11-01 18:13:32', 'Stock added via admin adjustment'),
-(9, 17, 9, 5, 20, 6500.00, '2025-11-01 19:05:36', 'Stock added via admin adjustment');
+(9, 17, 9, 5, 20, 6500.00, '2025-11-01 19:05:36', 'Stock added via admin adjustment'),
+(10, 17, 9, 5, 10, 6500.00, '2025-11-02 16:55:18', 'Stock added via admin adjustment'),
+(11, 8, 1, -19, 30, NULL, '2025-11-02 16:55:42', 'Stock removed via admin adjustment'),
+(12, 19, 8, 20, 20, 4000.00, '2025-11-02 00:00:00', 'Initial stock addition for new product'),
+(13, 20, 2, 25, 25, 5000.00, '2025-11-02 00:00:00', 'Initial stock addition for new product'),
+(14, 21, 5, 30, 30, 8000.00, '2025-11-02 00:00:00', 'Initial stock addition for new product'),
+(15, 22, 7, 30, 30, 9000.00, '2025-11-02 00:00:00', 'Initial stock addition for new product'),
+(17, 24, 3, 20, 20, 6000.00, '2025-11-02 00:00:00', 'Initial stock addition for new product'),
+(18, 25, 7, 15, 15, 3555.00, '2025-11-02 00:00:00', 'Initial stock addition for new product'),
+(19, 26, 4, 10, 10, 9000.00, '2025-11-02 00:00:00', 'Initial stock addition for new product');
 
 -- --------------------------------------------------------
 
@@ -440,31 +469,31 @@ ALTER TABLE `categories`
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `order_details`
 --
 ALTER TABLE `order_details`
-  MODIFY `order_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `order_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
@@ -476,7 +505,7 @@ ALTER TABLE `suppliers`
 -- AUTO_INCREMENT for table `supply_logs`
 --
 ALTER TABLE `supply_logs`
-  MODIFY `supply_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `supply_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `users`
