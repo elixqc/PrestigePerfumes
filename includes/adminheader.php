@@ -36,12 +36,14 @@ if (!isset($_SESSION['admin_logged_in'])) {
 
             <!-- Navigation Links (centered) -->
             <ul class="nav-links">
-                <li><a href="/prestigeperfumes/admin/dashboard.php">Dashboard</a></li>
+                
                 <li><a href="/prestigeperfumes/admin/additems.php">Add Products</a></li>
                 <li><a href="/prestigeperfumes/admin/manageproducts.php">Manage Products</a></li>
                 <li><a href="/prestigeperfumes/admin/suppliers.php">Suppliers</a></li>
                 <li><a href="/prestigeperfumes/admin/orders.php">Orders</a></li>
-                <li><a href="/prestigeperfumes/admin/reports.php">Reports</a></li>
+                <li><a href="/prestigeperfumes/admin/customers.php">Customers</a></li>
+                <li><a href="/prestigeperfumes/admin/dashboard.php">Admin Accounts</a></li>
+                
             </ul>
 
             <!-- Right Icons -->

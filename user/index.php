@@ -209,7 +209,7 @@ $orders = $stmt->get_result();
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
           </svg>
           <p>You haven't placed any orders yet.</p>
-          <a href="../shop.php" class="btn btn-primary" style="margin-top: 20px;"><span>Start Shopping</span></a>
+          <a href="../items/index.php" class="btn btn-primary" style="margin-top: 20px;"><span>Start Shopping</span></a>
         </div>
       <?php endif; ?>
     </section>
