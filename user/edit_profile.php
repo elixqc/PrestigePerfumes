@@ -2,7 +2,6 @@
 // user/edit_profile.php
 session_start();
 require_once('../includes/config.php');
-require_once('../includes/header.php');
 
 if (!isset($_SESSION['customer_id'])) {
     header("Location: login.php");
@@ -12,6 +11,7 @@ if (!isset($_SESSION['customer_id'])) {
 $customer_id = (int) $_SESSION['customer_id'];
 $error = '';
 $success = '';
+$redirect = false; // Flag for redirect
 
 // Handle POST (update)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -44,9 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success = "Profile updated successfully.";
                 // Update session display name if you store it
                 $_SESSION['customer_name'] = $full_name;
-                // redirect back to profile after save
-                header("Location: index.php");
-                exit;
+                // Set redirect flag instead of immediate redirect
+                $redirect = true;
             } else {
                 $error = "Unable to update profile. Please try again.";
             }
@@ -62,6 +61,8 @@ $stmt->execute();
 $current = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
+// Now include header after all processing
+require_once('../includes/header.php');
 ?>
 
 <section class="auth-section">
@@ -105,5 +106,15 @@ $stmt->close();
         </form>
     </div>
 </section>
+
+<?php 
+// JavaScript redirect if update was successful
+if ($redirect): ?>
+<script>
+    setTimeout(function() {
+        window.location.href = 'index.php';
+    }, 1500); // Redirect after 1.5 seconds to show success message
+</script>
+<?php endif; ?>
 
 <?php require_once('../includes/footer.php'); ?>

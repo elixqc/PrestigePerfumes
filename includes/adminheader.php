@@ -42,9 +42,9 @@ if (!isset($_SESSION['admin_logged_in'])) {
                 <li><a href="/prestigeperfumes/admin/suppliers.php">Suppliers</a></li>
                 <li><a href="/prestigeperfumes/admin/orders.php">Orders</a></li>
                 <li><a href="/prestigeperfumes/admin/customers.php">Customers</a></li>
-                <li><a href="/prestigeperfumes/admin/dashboard.php">Admin Accounts</a></li>
+                <li><a href="/prestigeperfumes/admin/adminaccounts.php">Admin Accounts</a></li>
                 
-            </ul>
+            </ul> 
 
             <!-- Right Icons -->
             <div class="nav-icons">
